@@ -122,7 +122,11 @@ sub parse {
     $buf->bytes(0, 1, '');   ## Cut off tag byte
     $buf->{offset} = 0;
     my $ref = $SUBPACKET_TYPES{$sp->{type}};
-    $sp->{data} = $ref->{r}->($buf) if $ref && $ref->{r};
+    if( defined $ref ) {
+        $sp->{data} = $ref->{r}->($buf) if $ref && $ref->{r};
+    } else {
+        $sp->{data} = $buf->bytes;
+    }
     $sp;
 }
 
@@ -133,7 +137,11 @@ sub save {
     $tag |= 0x80 if $sp->{critical};
     $buf->put_int8($tag);
     my $ref = $SUBPACKET_TYPES{$sp->{type}};
-    $ref->{w}->($buf, $sp->{data}) if $ref && $ref->{w};
+    if( defined $ref ) {
+        $ref->{w}->($buf, $sp->{data}) if $ref && $ref->{w};
+    } else {
+        $buf->put_bytes($sp->{data});
+    }
     $buf->bytes;
 }
 
