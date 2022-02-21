@@ -99,13 +99,15 @@ sub _ensure_bigint {
     return $num;
 }
 
+my $RNG = undef;
 sub get_random_bytes {
 	my $length = shift;
 	if (eval 'require Crypt::Random; 1;') {
-		return Crypt::Random::makerandom_octet( Length => $length);
+		return Crypt::Random::makerandom_octet( Length => $length, Strength => 0 );
 	}
 	elsif (eval 'require Bytes::Random::Secure; 1;') {
-		return Bytes::Random::Secure::random_bytes($length);
+		$RNG //= Bytes::Random::Secure->new(NonBlocking => 1);
+		return $RNG->bytes($length);
 	}
 	else {
 		die "No random source available!";
@@ -119,7 +121,8 @@ sub get_random_bigint {
 		return Math::BigInt->new($pari);
 	}
 	elsif (eval 'require Bytes::Random::Secure; 1;') {
-		my $hex = Bytes::Random::Secure::random_bytes_hex(int(($bits + 7) / 8));
+		$RNG //= Bytes::Random::Secure->new(NonBlocking => 1);
+		my $hex = $RNG->bytes(int(($bits + 7) / 8));
 		my $val = Math::BigInt->new("0x$hex");
 		# Get exactly the correct number of bits.
 		$val->brsft(8 - ($bits & 7)) if ($bits & 7);
