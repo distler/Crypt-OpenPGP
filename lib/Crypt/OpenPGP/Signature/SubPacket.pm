@@ -57,23 +57,25 @@ use vars qw( %SUBPACKET_TYPES );
             w    => sub { $_[0]->put_bytes($_[1], 8) } },
 
     20 => { name => 'Notation data',
-            r    => sub {
-                        { flags => $_[0]->get_int32,
-                          name => $_[0]->get_bytes($_[0]->get_int16),
-                          value => $_[0]->get_bytes($_[0]->get_int16) } },
+            r    => sub { my $flags = $_[0]->get_int32;
+                          my $namelen = $_[0]->get_int16;
+                          my $valuelen = $_[0]->get_int16;
+                        { flags => $flags,
+                          name => $_[0]->get_bytes($namelen),
+                          value => $_[0]->get_bytes($valuelen) } },
             w    => sub {
                         $_[0]->put_int32($_[1]->{flags});
                         $_[0]->put_int16(length $_[1]->{name});
-                        $_[0]->put_bytes($_[1]->{name});
                         $_[0]->put_int16(length $_[1]->{value});
+                        $_[0]->put_bytes($_[1]->{name});
                         $_[0]->put_bytes($_[1]->{value}) } },
 
     21 => { name => 'Preferred hash algorithms',
-            r    => sub { [ unpack 'C', $_[0]->bytes ] },
+            r    => sub { [ unpack 'C*', $_[0]->bytes ] },
             w    => sub { $_[0]->put_bytes(pack 'C*', @{ $_[1] }) } },
 
     22 => { name => 'Preferred compression algorithms',
-            r    => sub { [ unpack 'C', $_[0]->bytes ] },
+            r    => sub { [ unpack 'C*', $_[0]->bytes ] },
             w    => sub { $_[0]->put_bytes(pack 'C*', @{ $_[1] }) } },
 
     23 => { name => 'Key server preferences',
